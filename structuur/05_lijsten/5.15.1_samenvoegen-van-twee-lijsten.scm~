@@ -1,0 +1,8 @@
+(define (rec-merge-n l1 l2 n)
+  (define (rec l1 l2 ctr)
+    (cond
+     ((and (null? l1) (null? l2)) '())
+     ((null? l1) l2)
+     ((< ctr n) (cons (car l1) (rec (cdr l1) l2 (+ ctr 1))))
+     (else (rec l2 l1 0))))
+  (rec l1 l2 0))
