@@ -1,0 +1,8 @@
+(define (atom? x)
+  (not (pair? x)))
+
+(define (deep-combine combiner null-value tree)
+  (cond
+   ((null? tree) null-value)
+   ((atom? tree) tree)
+   (else (combiner (car tree) (cdr tree)))))

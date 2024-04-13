@@ -1,0 +1,24 @@
+(define (atom? x)
+  (not (pair? x)))
+
+(define (deep-map f tree)
+  (cond
+   ((null? tree) '())
+   ((atom? tree) (f tree))
+   (else (cons (deep-map f (car tree))
+	       (deep-map f (cdr tree))))))
+
+(define (deep-combine combiner null-value tree)
+  (cond
+   ((null? tree) null-value)
+   ((atom? tree) tree)
+   (else (combiner
+	  (deep-combine combiner null-value (car tree))
+	  (deep-combine combiner null-value (cdr tree))))))
+
+(define (deep-change e1 e2 tree)
+  (define (change x)
+    (if (= x e1)
+	e2
+	x))
+  (dep-map change tree))
