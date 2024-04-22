@@ -1,4 +1,4 @@
-#!r5rs
+#lang r5rs
 
 (#%require (only racket/base
                  time error))
