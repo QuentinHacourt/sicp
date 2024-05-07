@@ -444,14 +444,20 @@
 (define (or? exp)
   (tagged-list? exp 'or))
 
-(define (or-args exp)
+(define (or-clauses exp)
   (cdr exp))
 
+(define (next-or-clauses clauses)
+  (cdr clauses))
+
+(define (current-or-clause clauses)
+  (car clauses))
+
 (define (or->if exp)
-  (define (or-args->if exps)
-    (cond ((null? exps) 'false)
-          ((null? (cdr exps)) (car exps))
-          (else (make-if (car exps)
-                         (car exps)
-                         (or-args->if (cdr exps))))))
-  (or-args->if (or-args exp)))
+  (define (recursive clauses)
+    (cond ((null? clauses) 'false)
+          ((null? (next-or-clauses clauses)) (current-or-clause clauses))
+          (else (make-if (current-or-clause clauses)
+                         (current-or-clause clauses)
+                         (recursive (next-or-clauses clauses))))))
+  (recursive (or-clauses exp)))

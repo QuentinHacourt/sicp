@@ -1,5 +1,3 @@
-#lang r5rs
-
 (#%require (only racket/base
                  time error))
 
@@ -24,6 +22,7 @@
         ((assignment? exp) (eval-assignment exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
+        ((and? exp) (eval-and exp env))
         ((lambda? exp)
          (make-procedure (lambda-parameters exp)
                          (lambda-body exp)
@@ -31,7 +30,6 @@
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
-        ((and? exp) (eval-and exp env))
         ((application? exp)
          (apply (eval (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -369,6 +367,14 @@
 
 (define (primitive-implementation proc) (cadr proc))
 
+
+(define (primitive-and . args)
+	(if (null? args)
+		#f
+		(if (car args)
+			(apply-in-underlying-scheme primitive-and (cdr args))
+			#f)))
+
 (define primitive-procedures
   (list (list 'car car)
         (list 'cdr cdr)
@@ -381,8 +387,12 @@
         (list '- -)
         (list '< <)
         (list '> >)
-        (list 'display display)
+        (list 'symbol? symbol?)
         ;; more primitives
+        (list 'pair? pair?)
+        (list 'display display)
+        (list 'newline newline)
+        (list 'number->string number->string)
         ))
 
 (define (primitive-procedure-names)
@@ -430,16 +440,26 @@
 
 (define the-global-environment (setup-environment))
 
+;; Predicaat `and?`
 (define (and? exp)
   (tagged-list? exp 'and))
 
-;not sure if this is useful anymore
-(define (make-and params)
-  (cons 'and params))
+;; abstractie-procedures
 
+(define (and-clauses exp)
+  (cdr exp))
+
+(define (next-clauses exp)
+  (cdr exp))
+
+(define (current-clause exp)
+  (car exp))
+
+;;evalueer ands
 (define (eval-and exp env)
-  (let loop ((clauses (cdr exp)))
+  (define (iter clauses)
     (cond ((null? clauses) true)
-          ((null? (cdr clauses)) (eval (car clauses) env))
-          ((true? (eval (car clauses) env)) (loop (cdr clauses)))
-          (else false))))
+          ((null? (next-clauses clauses)) (eval (current-clause clauses) env))
+          ((true? (eval (current-clause clauses) env)) (iter (next-clauses clauses)))
+          (else false)))
+  (iter (and-clauses exp)))

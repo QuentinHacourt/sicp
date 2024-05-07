@@ -431,9 +431,20 @@
 (define (or? exp)
   (tagged-list? exp 'or))
 
+(define (or-clauses exp)
+  (cdr exp))
+
+(define (next-or-clauses clauses)
+  (cdr clauses))
+
+(define (current-or-clause clauses)
+  (car clauses))
+
 (define (eval-or exp env)
-  (let loop ((clauses (cdr exp)))
-    (cond ((null? clauses) false)
-          ((null? (cdr clauses)) (eval (car clauses) env))
-          ((true? (eval (car clauses) env)) (eval (car clauses) env))
-          (else (loop (cdr clauses))))))
+  (define (iter clauses)
+    (cond
+     ((null? clauses) false)
+     ((null? (next-or-clauses clauses)) (eval (current-or-clause clauses) env))
+     ((true? (eval (current-or-clause clauses) env)) (eval (current-or-clause clauses) env))
+     (else (iter (next-or-clauses clauses)))))
+  (iter (or-clauses exp)))

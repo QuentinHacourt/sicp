@@ -1,5 +1,3 @@
-#lang r5rs
-
 (#%require (only racket/base
                  time error))
 
@@ -24,6 +22,7 @@
         ((assignment? exp) (eval-assignment exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
+        ((and? exp) (eval (and->if exp) env))
         ((lambda? exp)
          (make-procedure (lambda-parameters exp)
                          (lambda-body exp)
@@ -31,7 +30,6 @@
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
-        ((and? exp) (eval (and->if exp) env))
         ((application? exp)
          (apply (eval (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -369,6 +367,14 @@
 
 (define (primitive-implementation proc) (cadr proc))
 
+
+(define (primitive-and . args)
+	(if (null? args)
+		#f
+		(if (car args)
+			(apply-in-underlying-scheme primitive-and (cdr args))
+			#f)))
+
 (define primitive-procedures
   (list (list 'car car)
         (list 'cdr cdr)
@@ -381,8 +387,12 @@
         (list '- -)
         (list '< <)
         (list '> >)
-        (list 'display display)
+        (list 'symbol? symbol?)
         ;; more primitives
+        (list 'pair? pair?)
+        (list 'display display)
+        (list 'newline newline)
+        (list 'number->string number->string)
         ))
 
 (define (primitive-procedure-names)
@@ -431,21 +441,26 @@
 (define the-global-environment (setup-environment))
 
 ;; Predicaat `and?`
-
 (define (and? exp)
   (tagged-list? exp 'and))
 
-;; Verticaal-procedure `and->if`
+;; abstractie-procedures
 
 (define (and-args exp)
   (cdr exp))
 
+(define (next-arg exp)
+  (cdr exp))
+
+(define (current-arg exp)
+  (car exp))
+
+;; Vertaal-procedure `and->if`
 (define (and->if exp)
-  (define (and-args->if exps)
-    (cond
-     ((null? exps) 'true)
-     ((null? (cdr exps)) (car exps))
-     (else (make-if (car exps)
-               (and-args->if (cdr exps))
-               'false))))
-  (and-args->if (and-args exp)))
+  (define (recursive exp)
+    (cond ((null? exp) 'true)
+          ((null? (next-arg exp)) (current-arg exp))
+          (else (make-if (current-arg exp)
+                         (recursive (next-arg exp))
+                         'false))))
+  (recursive (and-args exp)))

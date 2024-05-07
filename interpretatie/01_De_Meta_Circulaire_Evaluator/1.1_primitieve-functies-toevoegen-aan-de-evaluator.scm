@@ -1,5 +1,3 @@
-#lang r5rs
-
 (#%require (only racket/base
                  time error))
 
@@ -389,7 +387,7 @@
         (list '< <)
         (list '> >)
         (list 'symbol? symbol?)
-        ;; nieuw
+        ;; more primitives
         (list 'pair? pair?)
         (list 'display display)
         (list 'newline newline)
