@@ -12,6 +12,29 @@
 ;;
 (define apply-in-underlying-scheme apply)
 
+(define (let? exp)
+  (tagged-list? exp 'let))
+
+(define (let->applied-lambda exp)
+  (let* ((bindings (cadr exp))
+         (vars (map car bindings))
+         (exps (map cadr bindings))
+         (body (cddr exp)))
+    `((lambda ,vars ,@body) ,@exps)
+    ))
+
+(define (let*? exp)
+  (tagged-list? exp 'let*))
+
+(define (let*->lets exp)
+  (define (make-lets var-val-list body)
+    (if (or (null? var-val-list) (null? (cdr var-val-list)))
+        (list 'let var-val-list body)
+        (list 'let (list (car var-val-list)) (make-lets (cdr var-val-list) body))))
+  (let* ((body (caddr exp))
+         (var-val-list (cadr exp)))
+    (make-lets var-val-list body)))
+
 ;;
 ;; zie deel 1.1 p16
 ;;
@@ -22,7 +45,6 @@
         ((assignment? exp) (eval-assignment exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
-        ((let? exp) (eval-let exp env))
         ((lambda? exp)
          (make-procedure (lambda-parameters exp)
                          (lambda-body exp)
@@ -30,6 +52,9 @@
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
+        ((let? exp)
+         (eval (let->applied-lambda exp) env))
+        ((let*? exp) (eval (let*->lets exp) env))
         ((application? exp)
          (apply (eval (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -380,7 +405,6 @@
         (list '< <)
         (list '> >)
         (list 'display display)
-        (list 'list list)
         ;; more primitives
         ))
 
@@ -428,25 +452,3 @@
       (display object)))
 
 (define the-global-environment (setup-environment))
-
-(define (let? exp)
-  (tagged-list? exp 'let))
-
-(define (let-var-val-list exp)
-  (cadr exp))
-
-(define (let-vars exp)
-  (map car (let-var-val-list exp)))
-
-(define (let-vals exp)
-  (map cadr (let-var-val-list exp)))
-
-(define (let-body exp)
-  (cddr exp))
-
-(define (eval-let exp env)
-  (eval-sequence (let-body exp)
-                 (extend-environment
-                  (let-vars exp)
-                  (list-of-values (let-vals exp) env)
-                  env)))

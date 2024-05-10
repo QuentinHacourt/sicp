@@ -12,6 +12,43 @@
 ;;
 (define apply-in-underlying-scheme apply)
 
+(define (let? exp)
+  (tagged-list? exp 'let))
+
+(define (let->applied-lambda exp)
+  (let* ((bindings (cadr exp))
+         (vars (map car bindings))
+         (exps (map cadr bindings))
+         (body (cddr exp)))
+    `((lambda ,vars ,@body) ,@exps)
+    ))
+
+(define (let*? exp)
+  (tagged-list? exp 'let*))
+
+(define (var-val-list exp)
+  (cadr exp))
+
+(define (first-var var-val-list)
+  (caar var-val-list))
+
+(define (first-val var-val-list)
+  (cadar var-val-list))
+
+(define (let*-body exp)
+  (cddr exp))
+
+(define (eval-let* exp env)
+  (define (make-env var-val-list env)
+    (if (null? var-val-list)
+        env
+        (make-env (cdr var-val-list) (extend-environment
+                                      (list(first-var var-val-list))
+                                      (list (eval (first-val var-val-list) env))
+                                      env))))
+  (eval-sequence (let*-body exp)
+                 (make-env (var-val-list exp) env)))
+
 ;;
 ;; zie deel 1.1 p16
 ;;
@@ -22,7 +59,6 @@
         ((assignment? exp) (eval-assignment exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
-        ((let? exp) (eval-let exp env))
         ((lambda? exp)
          (make-procedure (lambda-parameters exp)
                          (lambda-body exp)
@@ -30,6 +66,9 @@
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
+        ((let? exp)
+         (eval (let->applied-lambda exp) env))
+        ((let*? exp) (eval-let* exp env))
         ((application? exp)
          (apply (eval (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -44,11 +83,11 @@
          (apply-primitive-procedure procedure arguments))
         ((compound-procedure? procedure)
          (eval-sequence
-           (procedure-body procedure)
-           (extend-environment
-             (procedure-parameters procedure)
-             arguments
-             (procedure-environment procedure))))
+          (procedure-body procedure)
+          (extend-environment
+           (procedure-parameters procedure)
+           arguments
+           (procedure-environment procedure))))
         (else
          (error
           "Unknown procedure type -- APPLY" procedure))))
@@ -76,8 +115,8 @@
 ;;
 (define (eval-definition exp env)
   (define-variable! (definition-variable exp)
-                    (eval (definition-value exp) env)
-                    env)
+    (eval (definition-value exp) env)
+    env)
   'ok)
 
 ;;
@@ -380,7 +419,6 @@
         (list '< <)
         (list '> >)
         (list 'display display)
-        (list 'list list)
         ;; more primitives
         ))
 
@@ -428,25 +466,3 @@
       (display object)))
 
 (define the-global-environment (setup-environment))
-
-(define (let? exp)
-  (tagged-list? exp 'let))
-
-(define (let-var-val-list exp)
-  (cadr exp))
-
-(define (let-vars exp)
-  (map car (let-var-val-list exp)))
-
-(define (let-vals exp)
-  (map cadr (let-var-val-list exp)))
-
-(define (let-body exp)
-  (cddr exp))
-
-(define (eval-let exp env)
-  (eval-sequence (let-body exp)
-                 (extend-environment
-                  (let-vars exp)
-                  (list-of-values (let-vals exp) env)
-                  env)))

@@ -22,7 +22,7 @@
         ((assignment? exp) (eval-assignment exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
-        ((let? exp) (eval-let exp env))
+        ((let? exp) (eval (let->applied-lambda exp) env))
         ((lambda? exp)
          (make-procedure (lambda-parameters exp)
                          (lambda-body exp)
@@ -429,24 +429,31 @@
 
 (define the-global-environment (setup-environment))
 
+;; check if let expressie
 (define (let? exp)
   (tagged-list? exp 'let))
 
-(define (let-var-val-list exp)
-  (cadr exp))
+(define (let-body let-exp)
+  (cddr let-exp))
 
-(define (let-vars exp)
-  (map car (let-var-val-list exp)))
+(define (let-params let-exp)
+  (cadr let-exp))
 
-(define (let-vals exp)
-  (map cadr (let-var-val-list exp)))
+(define (let-ids let-params)
+  (if (null? let-params)
+      '()
+      (cons (caar let-params) (let-ids (cdr let-params)))))
 
-(define (let-body exp)
-  (cddr exp))
+(define (let-val-exprs let-params)
+  (if (null? let-params)
+      '()
+      (cons (cadar let-params) (let-val-exprs (cdr let-params)))))
 
-(define (eval-let exp env)
-  (eval-sequence (let-body exp)
-                 (extend-environment
-                  (let-vars exp)
-                  (list-of-values (let-vals exp) env)
-                  env)))
+(define (make-application procedure arguments)
+ (cons procedure arguments))
+
+(define (let->applied-lambda exp)
+  (let ((body (let-body exp))
+        (ids (let-ids (let-params exp)))
+        (val-exprs (let-val-exprs (let-params exp))))
+    (make-application (make-lambda ids body) val-exprs)))
