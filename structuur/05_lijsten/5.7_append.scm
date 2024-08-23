@@ -1,6 +1,6 @@
-(define (my-append lst1 lst2)
-  (define (iter lst res)
-    (if (null? lst)
+(define (my-append l1 l2)
+  (define (iter res l)
+    (if (null? l)
         res
-        (iter (cdr lst) (cons (car lst) res))))
-  (iter (reverse lst1) lst2))
+        (iter (cons (car l) res) (cdr l))))
+  (iter l2 (reverse l1)))

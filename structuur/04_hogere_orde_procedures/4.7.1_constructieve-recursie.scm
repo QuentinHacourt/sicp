@@ -7,4 +7,3 @@
   (if (> a b)
       1
       (* (factor a) (product factor (next a) next b))))
-  

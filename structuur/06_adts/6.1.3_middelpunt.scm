@@ -17,5 +17,6 @@
   (cdr segment))
 
 (define (middelpunt segment)
-  (make-punt (/ (+ (x (start-punt segment)) (x (end-punt segment))) 2)
-	     (/ (+ (y (start-punt segment)) (y (end-punt segment))) 2)))
+  (make-punt
+   (/ (+ (x (start-punt segment)) (x (end-punt segment))) 2)
+   (/ (+ (y (start-punt segment)) (y (end-punt segment))) 2)))

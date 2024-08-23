@@ -1,5 +1,5 @@
-(define (last lst)
+(define (last l)
   (cond
-   ((null? lst) #f)
-   ((null? (cdr lst)) (car lst))
-   (else (last (cdr lst)))))
+   ((null? l) #f)
+   ((null? (cdr l)) (car l))
+   (else (last (cdr l)))))

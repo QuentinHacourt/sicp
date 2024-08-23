@@ -1,11 +1,11 @@
-(define (rec-reverse lst)
-  (if (null? lst)
+(define (rec-reverse l)
+  (if (null? l)
       '()
-      (append (rec-reverse (cdr lst)) (list (car lst)))))
+      (append (rec-reverse (cdr l)) (list (car l)))))
 
-(define (iter-reverse lst)
-  (define (iter lst res)
-    (if (null? lst)
-	res
-	(iter (cdr lst) (append (list (car lst)) res))))
-  (iter lst '()))
+(define (iter-reverse l)
+  (define (iter l acc)
+    (if (null? l)
+        acc
+        (iter (cdr l) (cons (car l) acc))))
+  (iter l '()))

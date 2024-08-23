@@ -3,5 +3,6 @@
 
 (define (fringe l)
   (cond ((null? l) '())
-	((atom? l) (list l))
-	(else (append (fringe (car l)) (fringe (cdr l))))))
+	      ((atom? l) (list l))
+	      (else (append (fringe (car l))
+                      (fringe (cdr l))))))

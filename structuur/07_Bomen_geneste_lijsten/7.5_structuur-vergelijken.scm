@@ -2,7 +2,7 @@
   (not (pair? x)))
 
 (define (both-atoms? x y)
-  (and (atom? x) (atom? y)))
+  (and (atom? x) (atom? y)))
 
 (define (both-not-atoms? x y)
   (and (pair? x) (pair? y)))
