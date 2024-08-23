@@ -2,23 +2,22 @@
 (define (and? exp)
   (tagged-list? exp 'and))
 
-;; abstractie-procedures
-
-(define (and-args exp)
-  (cdr exp))
-
-(define (next-arg exp)
-  (cdr exp))
-
-(define (current-arg exp)
-  (car exp))
-
 ;; Vertaal-procedure `and->if`
+(define (and-exps exp)
+  (cdr exp))
+
+(define (next-exps exps)
+  (cdr exps))
+
+(define (current-exp exps)
+  (car exps))
+
 (define (and->if exp)
-  (define (recursive exp)
-    (cond ((null? exp) 'true)
-          ((null? (next-arg exp)) (current-arg exp))
-          (else (make-if (current-arg exp)
-                         (recursive (next-arg exp))
-                         'false))))
-  (recursive (and-args exp)))
+  (define (recursive exps)
+    (cond
+     ((null? exps) 'true)
+     ((null? (next-exps exps)) (current-exp exps))
+     (else (make-if (current-exp exps)
+                     (recursive (next-exps exps))
+                     'false))))
+  (recursive (and-exps exp)))

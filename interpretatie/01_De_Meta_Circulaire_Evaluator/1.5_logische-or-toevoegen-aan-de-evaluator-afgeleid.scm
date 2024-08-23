@@ -33,6 +33,7 @@
         ((assignment? exp) (eval-assignment exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
+        ((or? exp) (eval (or->if exp) env))
         ((lambda? exp)
          (make-procedure (lambda-parameters exp)
                          (lambda-body exp)
@@ -40,7 +41,6 @@
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
-        ((or? exp) (eval (or->if exp) env))
         ((let? exp)
          (eval-let exp env))
         ((application? exp)
@@ -447,17 +447,19 @@
 (define (or-clauses exp)
   (cdr exp))
 
-(define (next-or-clauses clauses)
+(define (next-clauses clauses)
   (cdr clauses))
 
-(define (current-or-clause clauses)
+(define (current-clause clauses)
   (car clauses))
+
 
 (define (or->if exp)
   (define (recursive clauses)
-    (cond ((null? clauses) 'false)
-          ((null? (next-or-clauses clauses)) (current-or-clause clauses))
-          (else (make-if (current-or-clause clauses)
-                         (current-or-clause clauses)
-                         (recursive (next-or-clauses clauses))))))
+    (cond
+     ((null? clauses) 'false)
+     ((null? (next-clauses clauses)) (current-clause clauses))
+     (else (make-if (current-clause clauses)
+                    (current-clause clauses)
+                    (recursive (next-clauses clauses))))))
   (recursive (or-clauses exp)))

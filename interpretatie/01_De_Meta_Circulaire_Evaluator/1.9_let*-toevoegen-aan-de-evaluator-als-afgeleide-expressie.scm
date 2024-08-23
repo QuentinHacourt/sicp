@@ -26,14 +26,21 @@
 (define (let*? exp)
   (tagged-list? exp 'let*))
 
+(define (bindings exp)
+  (cadr exp))
+
+(define (body exp)
+  (cddr exp))
+
+(define (make-let bindings body)
+  (cons 'let (cons bindings body)))
+
 (define (let*->lets exp)
-  (define (make-lets var-val-list body)
-    (if (or (null? var-val-list) (null? (cdr var-val-list)))
-        (list 'let var-val-list body)
-        (list 'let (list (car var-val-list)) (make-lets (cdr var-val-list) body))))
-  (let* ((body (caddr exp))
-         (var-val-list (cadr exp)))
-    (make-lets var-val-list body)))
+  (define (recursief body bindings)
+    (if (or (null? bindings) (null? (cdr bindings)))
+        (make-let bindings body)
+        (make-let (list (car bindings)) (list (recursief body (cdr bindings))))))
+  (recursief (body exp) (bindings exp)))
 
 ;;
 ;; zie deel 1.1 p16
@@ -45,6 +52,7 @@
         ((assignment? exp) (eval-assignment exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
+        ((let*? exp) (eval (let*->lets exp) env))
         ((lambda? exp)
          (make-procedure (lambda-parameters exp)
                          (lambda-body exp)
@@ -54,7 +62,6 @@
         ((cond? exp) (eval (cond->if exp) env))
         ((let? exp)
          (eval (let->applied-lambda exp) env))
-        ((let*? exp) (eval (let*->lets exp) env))
         ((application? exp)
          (apply (eval (operator exp) env)
                 (list-of-values (operands exp) env)))

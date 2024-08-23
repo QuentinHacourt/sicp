@@ -26,28 +26,33 @@
 (define (let*? exp)
   (tagged-list? exp 'let*))
 
-(define (var-val-list exp)
+(define (let*-var-val-list exp)
   (cadr exp))
 
-(define (first-var var-val-list)
-  (caar var-val-list))
+(define (let*-vars exp)
+  (map car (let*-var-val-list exp)))
 
-(define (first-val var-val-list)
-  (cadar var-val-list))
+(define (let*-vals exp)
+  (map cadr (let*-var-val-list exp)))
 
 (define (let*-body exp)
   (cddr exp))
 
+(define (extend-environment* env var-val-list)
+  (if (null? var-val-list)
+      env
+      (let ((var (caar var-val-list))
+            (val (cadar var-val-list)))
+        (extend-environment* (extend-environment (list var)
+                                                 (list (eval val env))
+                                                 env)
+                             (cdr var-val-list)))))
+
 (define (eval-let* exp env)
-  (define (make-env var-val-list env)
-    (if (null? var-val-list)
-        env
-        (make-env (cdr var-val-list) (extend-environment
-                                      (list(first-var var-val-list))
-                                      (list (eval (first-val var-val-list) env))
-                                      env))))
   (eval-sequence (let*-body exp)
-                 (make-env (var-val-list exp) env)))
+                 (extend-environment*
+                  env
+                  (let*-var-val-list exp))))
 
 ;;
 ;; zie deel 1.1 p16

@@ -53,6 +53,12 @@
 
 (define (assignment-value exp) (caddr exp))
 
+(define (not? exp)
+  (tagged-list? exp 'not))
+
+(define (not-arg exp)
+  (cadr exp))
+
 ;;
 ;; zie deel 1.1 p22
 ;;
@@ -771,6 +777,8 @@
    (list 'no-operands? no-operands?)
    (list 'first-operand first-operand)
    (list 'rest-operands rest-operands)
+   (list 'not? not?)
+   (list 'not-arg not-arg)
 
    (list 'true? true?)
    (list 'make-procedure make-procedure)
@@ -860,6 +868,8 @@ eval-dispatch
   (branch (label ev-definition))
   (test (op if?) (reg exp))
   (branch (label ev-if))
+  (test (op not?) (reg exp))
+  (branch (label ev-not))
   (test (op lambda?) (reg exp))
   (branch (label ev-lambda))
   (test (op begin?) (reg exp))
@@ -930,6 +940,20 @@ ev-appl-accum-last-arg
   (assign argl (op adjoin-arg) (reg val) (reg argl))
   (restore proc)
   (goto (label apply-dispatch))
+ev-not
+  (assign exp (op not-arg) (reg exp))
+  (save continue)
+  (assign continue (label ev-not-after-eval))
+  (goto (label eval-dispatch))
+ev-not-after-eval
+  (restore continue)
+  (test (op true?) (reg val))
+  (branch (label ev-not-evalled-is-true))
+  (assign val (const #t))
+  (goto (reg continue))
+ev-not-evalled-is-true
+  (assign val (const #f))
+  (goto (reg continue))
 
 ;;
 ;; zie deel 7 p14
@@ -1056,17 +1080,3 @@ dodona-test-finish
 ;   '(not true))
 ; (start eceval)
 ; (get-register-contents eceval 'val)
-
-(define (not? exp)
-  (tagged-list? exp 'not))
-
-(define ())
-
-(define (and? exp)
-  (tagged-list? exp 'and))
-
-(define (and-args exp)
-  (cdr exp))
-
-(define (cond? exp)
-  (tagged-list exp 'cond))

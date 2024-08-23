@@ -22,6 +22,7 @@
         ((assignment? exp) (eval-assignment exp env))
         ((definition? exp) (eval-definition exp env))
         ((if? exp) (eval-if exp env))
+        ((or? exp) (eval-or exp env))
         ((lambda? exp)
          (make-procedure (lambda-parameters exp)
                          (lambda-body exp)
@@ -29,7 +30,6 @@
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
-        ((or? exp) (eval-or exp env))
         ((application? exp)
          (apply (eval (operator exp) env)
                 (list-of-values (operands exp) env)))
@@ -434,17 +434,19 @@
 (define (or-clauses exp)
   (cdr exp))
 
-(define (next-or-clauses clauses)
+(define (next-clauses clauses)
   (cdr clauses))
 
-(define (current-or-clause clauses)
+(define (current-clause clauses)
   (car clauses))
 
 (define (eval-or exp env)
   (define (iter clauses)
-    (cond
-     ((null? clauses) false)
-     ((null? (next-or-clauses clauses)) (eval (current-or-clause clauses) env))
-     ((true? (eval (current-or-clause clauses) env)) (eval (current-or-clause clauses) env))
-     (else (iter (next-or-clauses clauses)))))
+    (if (null? clauses)
+        false
+        (let ((current (eval (current-clause clauses) env)))
+          (cond
+           (current current)
+           ((null? (next-clauses clauses)) false)
+           (else (iter (next-clauses clauses)))))))
   (iter (or-clauses exp)))

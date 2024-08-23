@@ -34,7 +34,7 @@
          (apply (eval (operator exp) env)
                 (list-of-values (operands exp) env)))
         (else
-         (error "Unknown expression type -- EVAL" exp))))
+         (error "unknown expression type -- eval" exp))))
 
 ;;
 ;; zie deel 1.1 p34/p52
@@ -44,14 +44,14 @@
          (apply-primitive-procedure procedure arguments))
         ((compound-procedure? procedure)
          (eval-sequence
-           (procedure-body procedure)
-           (extend-environment
-             (procedure-parameters procedure)
-             arguments
-             (procedure-environment procedure))))
+          (procedure-body procedure)
+          (extend-environment
+           (procedure-parameters procedure)
+           arguments
+           (procedure-environment procedure))))
         (else
          (error
-          "Unknown procedure type -- APPLY" procedure))))
+          "unknown procedure type -- apply" procedure))))
 
 ;;
 ;; zie deel 1.1 p33
@@ -76,8 +76,8 @@
 ;;
 (define (eval-definition exp env)
   (define-variable! (definition-variable exp)
-                    (eval (definition-value exp) env)
-                    env)
+    (eval (definition-value exp) env)
+    env)
   'ok)
 
 ;;
@@ -209,7 +209,7 @@
         (if (cond-else-clause? first)
             (if (null? rest)
                 (sequence->exp (cond-actions first))
-                (error "ELSE clause isn't last -- COND->IF"
+                (error "else clause isn't last -- cond->if"
                        clauses))
             (make-if (cond-predicate first)
                      (sequence->exp (cond-actions first))
@@ -281,8 +281,8 @@
   (if (= (length vars) (length vals))
       (cons (make-frame vars vals) base-env)
       (if (< (length vars) (length vals))
-          (error "Too many arguments supplied" vars vals)
-          (error "Too few arguments supplied" vars vals))))
+          (error "too many arguments supplied" vars vals)
+          (error "too few arguments supplied" vars vals))))
 
 ;;
 ;; zie deel 1.1 p44
@@ -309,7 +309,7 @@
              (car vals))
             (else (scan (cdr vars) (cdr vals)))))
     (if (eq? env the-empty-environment)
-        (error "Unbound variable" var)
+        (error "unbound variable" var)
         (let ((frame (first-frame env)))
           (scan (frame-variables frame)
                 (frame-values frame)))))
@@ -327,7 +327,7 @@
              (set-car! vals val))
             (else (scan (cdr vars) (cdr vals)))))
     (if (eq? env the-empty-environment)
-        (error "Unbound variable -- SET!" var)
+        (error "unbound variable -- set!" var)
         (let ((frame (first-frame env)))
           (scan (frame-variables frame)
                 (frame-values frame)))))
@@ -367,14 +367,6 @@
 
 (define (primitive-implementation proc) (cadr proc))
 
-
-(define (primitive-and . args)
-	(if (null? args)
-		#f
-		(if (car args)
-			(apply-in-underlying-scheme primitive-and (cdr args))
-			#f)))
-
 (define primitive-procedures
   (list (list 'car car)
         (list 'cdr cdr)
@@ -387,12 +379,8 @@
         (list '- -)
         (list '< <)
         (list '> >)
-        (list 'symbol? symbol?)
-        ;; more primitives
-        (list 'pair? pair?)
         (list 'display display)
-        (list 'newline newline)
-        (list 'number->string number->string)
+        ;; more primitives
         ))
 
 (define (primitive-procedure-names)
@@ -413,8 +401,8 @@
 ;;
 ;; zie deel 1.1 p11
 ;;
-(define input-prompt ";;; M-Eval input:")
-(define output-prompt ";;; M-Eval value:")
+(define input-prompt ";;; m-eval input:")
+(define output-prompt ";;; m-eval value:")
 
 (define (driver-loop)
   (prompt-for-input input-prompt)
@@ -440,26 +428,26 @@
 
 (define the-global-environment (setup-environment))
 
-;; Predicaat `and?`
+;; and?
 (define (and? exp)
   (tagged-list? exp 'and))
 
-;; abstractie-procedures
-
+;; abstractie procedures
 (define (and-clauses exp)
   (cdr exp))
 
-(define (next-clauses exp)
+(define (next-and-clauses exp)
   (cdr exp))
 
 (define (current-clause exp)
   (car exp))
 
-;;evalueer ands
+;; eval-and?
 (define (eval-and exp env)
   (define (iter clauses)
-    (cond ((null? clauses) true)
-          ((null? (next-clauses clauses)) (eval (current-clause clauses) env))
-          ((true? (eval (current-clause clauses) env)) (iter (next-clauses clauses)))
-          (else false)))
+    (cond
+     ((null? clauses) true)
+     ((null? (next-and-clauses clauses)) (eval (current-clause clauses) env))
+     ((eval (current-clause clauses) env) (iter (next-and-clauses clauses)))
+     (else false)))
   (iter (and-clauses exp)))
